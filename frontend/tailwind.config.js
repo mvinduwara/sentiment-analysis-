@@ -1,9 +1,110 @@
-/** @type {import('tailwindcss').Config} */
+import type { Config } from 'tailwindcss'
+
 export default {
-  content: [],
+  content: [
+    './index.html',
+    './src/**/*.{js,ts,jsx,tsx}',
+  ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        display: ['"DM Serif Display"', 'serif'],
+        sans: ['"Syne"', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'monospace'],
+      },
+      colors: {
+        ink: {
+          50:  '#f5f4f0',
+          100: '#e8e6e0',
+          200: '#cdc9bf',
+          300: '#b0aa9d',
+          400: '#918b7c',
+          500: '#736d5f',
+          600: '#5a5549',
+          700: '#424038',
+          800: '#2c2b26',
+          900: '#181713',
+          950: '#0d0c0a',
+        },
+        verdant: {
+          50:  '#edfaf3',
+          100: '#d0f4e1',
+          200: '#a1e8c3',
+          300: '#64d49e',
+          400: '#2db976',
+          500: '#1a9a5e',
+          600: '#127a4a',
+          700: '#0e5e39',
+          800: '#0b4429',
+          900: '#062d1b',
+        },
+        crimson: {
+          50:  '#fdf0f0',
+          100: '#fad8d8',
+          200: '#f4a8a8',
+          300: '#ec6e6e',
+          400: '#e03d3d',
+          500: '#c82020',
+          600: '#a01818',
+          700: '#7b1212',
+          800: '#580d0d',
+          900: '#380808',
+        },
+        amber: {
+          50:  '#fdf8ec',
+          100: '#faeec8',
+          200: '#f5d98a',
+          300: '#efc04d',
+          400: '#e3a71f',
+          500: '#c68a0e',
+          600: '#9e6d09',
+          700: '#785207',
+          800: '#553a05',
+          900: '#362503',
+        },
+        azure: {
+          50:  '#edf4fd',
+          100: '#cde1fa',
+          200: '#9cc3f4',
+          300: '#62a0ec',
+          400: '#347ae0',
+          500: '#1c5ecc',
+          600: '#1248a8',
+          700: '#0d3682',
+          800: '#092560',
+          900: '#05173e',
+        },
+      },
+      animation: {
+        'fade-in': 'fadeIn 0.4s ease-out forwards',
+        'slide-up': 'slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'slide-in-right': 'slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'pulse-slow': 'pulse 3s ease-in-out infinite',
+        'spin-slow': 'spin 8s linear infinite',
+        'count-up': 'countUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        slideUp: {
+          '0%': { opacity: '0', transform: 'translateY(16px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        slideInRight: {
+          '0%': { opacity: '0', transform: 'translateX(20px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
+        },
+        countUp: {
+          '0%': { opacity: '0', transform: 'translateY(8px) scale(0.95)' },
+          '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+        },
+      },
+      backgroundImage: {
+        'grain': "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E\")",
+      },
+    },
   },
   plugins: [],
-}
-
+} satisfies Config
