@@ -1,94 +1,120 @@
-import db from '../db/database'
-import type { DBKeyword, KeywordCategory } from '../types'
+import { Router, Request, Response } from 'express'
+import { z } from 'zod'
+import {
+  getAllKeywords,
+  addKeyword,
+  updateKeyword,
+  deleteKeyword,
+} from '../services/keywordService'
 
-export function getAllKeywords(): DBKeyword[] {
-  return db.all<DBKeyword>(
-    'SELECT * FROM keywords ORDER BY category ASC, word ASC'
-  )
-}
+const router = Router()
 
-export function getKeywordsByCategory(category: KeywordCategory): DBKeyword[] {
-  return db.all<DBKeyword>(
-    'SELECT * FROM keywords WHERE category = ? ORDER BY weight DESC',
-    [category]
-  )
-}
+const KeywordSchema = z.object({
+  word: z.string().min(1, 'Word is required').max(64, 'Word too long'),
+  category: z.enum(['positive', 'negative', 'neutral', 'spam'], {
+    errorMap: () => ({ message: 'Category must be positive, negative, neutral, or spam' }),
+  }),
+  weight: z
+    .number({ invalid_type_error: 'Weight must be a number' })
+    .int()
+    .min(1, 'Weight must be at least 1')
+    .max(10, 'Weight cannot exceed 10'),
+})
 
-export function addKeyword(
-  word: string,
-  category: KeywordCategory,
-  weight: number
-): DBKeyword {
-  const clean = word.toLowerCase().trim()
-
-  const existing = db.first<DBKeyword>(
-    'SELECT * FROM keywords WHERE word = ?',
-    [clean]
-  )
-  if (existing) {
-    throw new Error('UNIQUE constraint failed: keyword already exists')
+function mapKeyword(k: ReturnType<typeof getAllKeywords>[number]) {
+  return {
+    id:        k.id,
+    word:      k.word,
+    category:  k.category,
+    weight:    k.weight,
+    createdAt: k.created_at,
   }
-
-  const id = db.insert(
-    'INSERT INTO keywords (word, category, weight) VALUES (?, ?, ?)',
-    [clean, category, weight]
-  )
-
-  const inserted = db.first<DBKeyword>(
-    'SELECT * FROM keywords WHERE id = ?',
-    [id]
-  )
-  if (!inserted) throw new Error('Failed to retrieve inserted keyword')
-  return inserted
 }
 
-export function updateKeyword(
-  id: number,
-  word: string,
-  category: KeywordCategory,
-  weight: number
-): DBKeyword | undefined {
-  const clean = word.toLowerCase().trim()
+function isDuplicateError(err: unknown): boolean {
+  const msg = ((err as Error)?.message ?? '').toLowerCase()
+  return msg.includes('unique') || msg.includes('already exists')
+}
 
-  const conflict = db.first<DBKeyword>(
-    'SELECT * FROM keywords WHERE word = ? AND id != ?',
-    [clean, id]
-  )
-  if (conflict) {
-    throw new Error('UNIQUE constraint failed: keyword already exists')
+router.get('/', (_req: Request, res: Response) => {
+  try {
+    return res.json({
+      success: true,
+      data:    getAllKeywords().map(mapKeyword),
+    })
+  } catch (err) {
+    console.error('[KEYWORDS GET]', err)
+    return res.status(500).json({ success: false, message: 'Failed to fetch keywords' })
   }
+})
 
-  db.run(
-    'UPDATE keywords SET word = ?, category = ?, weight = ? WHERE id = ?',
-    [clean, category, weight, id]
-  )
-
-  return db.first<DBKeyword>(
-    'SELECT * FROM keywords WHERE id = ?',
-    [id]
-  )
-}
-
-export function deleteKeyword(id: number): boolean {
-  const existing = db.first(
-    'SELECT id FROM keywords WHERE id = ?',
-    [id]
-  )
-  if (!existing) return false
-  db.run('DELETE FROM keywords WHERE id = ?', [id])
-  return true
-}
-
-export function getKeywordMap(): Map<string, { category: KeywordCategory; weight: number }> {
-  const rows = db.all<{ word: string; category: KeywordCategory; weight: number }>(
-    'SELECT word, category, weight FROM keywords'
-  )
-  const map = new Map<string, { category: KeywordCategory; weight: number }>()
-  for (const row of rows) {
-    map.set(row.word.toLowerCase(), {
-      category: row.category,
-      weight: Number(row.weight),
+router.post('/', (req: Request, res: Response) => {
+  const parsed = KeywordSchema.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({
+      success: false,
+      message: parsed.error.errors[0]?.message ?? 'Invalid input',
     })
   }
-  return map
-}
+
+  try {
+    const kw = addKeyword(parsed.data.word, parsed.data.category, parsed.data.weight)
+    return res.status(201).json({ success: true, data: mapKeyword(kw) })
+  } catch (err) {
+    if (isDuplicateError(err)) {
+      return res.status(409).json({
+        success: false,
+        message: `The keyword "${parsed.data.word}" already exists in the databank`,
+      })
+    }
+    console.error('[KEYWORDS POST]', err)
+    return res.status(500).json({ success: false, message: 'Failed to add keyword' })
+  }
+})
+
+router.put('/:id', (req: Request, res: Response) => {
+  const id = parseInt(req.params.id, 10)
+  if (isNaN(id)) {
+    return res.status(400).json({ success: false, message: 'Invalid keyword ID' })
+  }
+
+  const parsed = KeywordSchema.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({
+      success: false,
+      message: parsed.error.errors[0]?.message ?? 'Invalid input',
+    })
+  }
+
+  try {
+    const kw = updateKeyword(id, parsed.data.word, parsed.data.category, parsed.data.weight)
+    if (!kw) {
+      return res.status(404).json({ success: false, message: 'Keyword not found' })
+    }
+    return res.json({ success: true, data: mapKeyword(kw) })
+  } catch (err) {
+    if (isDuplicateError(err)) {
+      return res.status(409).json({
+        success: false,
+        message: `The keyword "${parsed.data.word}" already exists in the databank`,
+      })
+    }
+    console.error('[KEYWORDS PUT]', err)
+    return res.status(500).json({ success: false, message: 'Failed to update keyword' })
+  }
+})
+
+router.delete('/:id', (req: Request, res: Response) => {
+  const id = parseInt(req.params.id, 10)
+  if (isNaN(id)) {
+    return res.status(400).json({ success: false, message: 'Invalid keyword ID' })
+  }
+
+  const deleted = deleteKeyword(id)
+  if (!deleted) {
+    return res.status(404).json({ success: false, message: 'Keyword not found' })
+  }
+  return res.json({ success: true, message: 'Keyword removed from databank' })
+})
+
+export default router
