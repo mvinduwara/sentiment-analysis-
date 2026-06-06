@@ -37,7 +37,6 @@ CREATE INDEX IF NOT EXISTS idx_keywords_word     ON keywords(word);
 `
 
 export const DEFAULT_KEYWORDS = [
-  // ── Positive ──────────────────────────────────────────────────────────────
   { word: 'excellent',             category: 'positive', weight: 8  },
   { word: 'outstanding',           category: 'positive', weight: 9  },
   { word: 'fantastic',             category: 'positive', weight: 8  },
@@ -68,7 +67,6 @@ export const DEFAULT_KEYWORDS = [
   { word: 'good value',            category: 'positive', weight: 6  },
   { word: 'professional',          category: 'positive', weight: 5  },
   { word: 'helpful',               category: 'positive', weight: 5  },
-  // ── Negative ──────────────────────────────────────────────────────────────
   { word: 'terrible',              category: 'negative', weight: 9  },
   { word: 'horrible',              category: 'negative', weight: 9  },
   { word: 'awful',                 category: 'negative', weight: 8  },
@@ -99,7 +97,6 @@ export const DEFAULT_KEYWORDS = [
   { word: 'pathetic',              category: 'negative', weight: 8  },
   { word: 'zero stars',            category: 'negative', weight: 10 },
   { word: 'stay away',             category: 'negative', weight: 9  },
-  // ── Neutral ───────────────────────────────────────────────────────────────
   { word: 'okay',                  category: 'neutral', weight: 2 },
   { word: 'average',               category: 'neutral', weight: 2 },
   { word: 'decent',                category: 'neutral', weight: 3 },
@@ -110,7 +107,6 @@ export const DEFAULT_KEYWORDS = [
   { word: 'alright',               category: 'neutral', weight: 2 },
   { word: 'mediocre',              category: 'neutral', weight: 3 },
   { word: 'so so',                 category: 'neutral', weight: 2 },
-  // ── Spam / Manipulation indicators ────────────────────────────────────────
   { word: 'best ever',             category: 'spam', weight: 7 },
   { word: 'absolutely perfect',    category: 'spam', weight: 8 },
   { word: 'must buy',              category: 'spam', weight: 7 },
